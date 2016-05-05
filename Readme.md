@@ -380,9 +380,43 @@ public interface IShoppingCartService
   
 ## Carrito de la compra y la Sesión en ASP.NET Core
 http://benjii.me/2015/07/using-sessions-and-httpcontext-in-aspnet5-and-mvc6/
+
+- Añadir la referencia `Microsoft.AspNet.Session`
+- Configurar el uso de sesiones en el pipeline de OWIN añadiendo las llamadas a `AddSession()` y `AddCaching()` 
+en el método `ConfigureServices(IServiceCollection services)` del archivo `startup.cs` 
+debajo de la llamada a `AddMvc()` 
 ```
-//TODO: 
-``` 
+// Add MVC services to the services container.
+services.AddMvc();
+services.AddCaching(); // Adds a default in-memory implementation of     IDistributedCache
+services.AddSession();
+```
+- En ese mismo archivo, el método `Configure`, añadir una llamada a `UseSession()` justo antes la llamada a `UseMvc()`
+```
+// IMPORTANT: This session call MUST go before UseMvc()
+app.UseSession();
+```
+- Por último, modificar la propiedad `ShopingCartId` de `MusicStoreController` para guardar 
+el identificador del carrito de la compra en la sesión en vez de en la cookie 
+```
+string ShopingCartId
+{
+    get 
+    {
+        if (_shopingCartId == null)
+        {
+            _shopingCartId = HttpContext.Session.GetString("ShopingCartId");
+            if (_shopingCartId == null)
+            {
+                _shopingCartId = ShoppingCartService.NewCart();                        
+                HttpContext.Session.SetString("ShopingCartId", _shopingCartId);
+            }
+        }
+        return _shopingCartId;
+    }
+}
+```
+
 
 ## API REST
 
